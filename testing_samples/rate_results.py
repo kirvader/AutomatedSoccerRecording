@@ -19,7 +19,7 @@ from temp_utils.custom_model_results_folder import get_custom_model_results_fold
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Model name")
-    parser.add_argument("--eps", type=int, default=0.02, help="Accuracy of boxes equality.")
+    parser.add_argument("--eps", type=float, default=0.02, help="Accuracy of boxes equality.")
 
     return parser.parse_args()
 
