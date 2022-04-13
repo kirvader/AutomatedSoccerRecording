@@ -16,7 +16,6 @@ def process_source_with_model(
         nosave=True,
         project=project_path,
         name=name,
-        classes=[32],
         device=0
         )
 
