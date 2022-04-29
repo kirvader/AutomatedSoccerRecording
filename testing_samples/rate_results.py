@@ -19,6 +19,7 @@ from temp_utils.custom_model_results_folder import get_custom_model_results_fold
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("model", help="Model name")
+    parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument("--eps", type=float, default=0.02, help="Accuracy of boxes equality.")
 
     return parser.parse_args()
@@ -62,7 +63,9 @@ def boxes_are_almost_same(box1, box2, eps=0.02):
     return True
 
 
-def get_results(str_path):
+def get_results(str_path, classes=None):
+    if classes is None:
+        classes = [32]
     if not Path(str_path).exists():
         return []
     result = []
@@ -70,30 +73,32 @@ def get_results(str_path):
         lines = f.readlines()
         for line in lines:
             tokens = line.split(' ')
-            result.append(ClassifiedBox(int(tokens[0]), float(tokens[1]), float(tokens[2]), float(tokens[3]), float(tokens[4])))
+            if int(tokens[0]) in classes:
+                result.append(ClassifiedBox(int(tokens[0]), float(tokens[1]), float(tokens[2]), float(tokens[3]), float(tokens[4])))
     result = sorted(result, key=cmp_to_key(ClassifiedBox.comparator))
     return result
 
+if __name__ == "__main__":
+    args = parse_args()
+    model = args.model
+    eps = args.eps
+    classes = args.classes
 
-args = parse_args()
-model = args.model
-eps = args.eps
+    entered_model_results_folder = Path(PROJECT_ROOT) / Path(f"{get_custom_model_results_folder(model)}/labels/")
+    processed_images_folder = Path(PROJECT_ROOT) / Path('dataset/images/test')
+    real_results_folder = Path(PROJECT_ROOT) / Path('dataset/labels/test')
 
-entered_model_results_folder = Path(PROJECT_ROOT) / Path(f"{get_custom_model_results_folder(model)}/labels/")
-processed_images_folder = Path(PROJECT_ROOT) / Path('testing_samples/images/')
-real_results_folder = Path(PROJECT_ROOT) / Path('testing_samples/labels/')
+    count_of_accepted = 0
+    count_of_all_images = 0
 
-count_of_accepted = 0
-count_of_all_images = 0
+    for img_path in processed_images_folder.glob('*.jpg'):
+        count_of_all_images += 1
+        img_name = str(img_path.name)[:-4]
+        real_result = get_results(str(real_results_folder / Path(f"{img_name}.txt")), classes=classes)
+        entered_model_result = get_results(str(entered_model_results_folder / Path(f"{img_name}.txt")), classes=classes)
+        if len(real_result) != len(entered_model_result):
+            continue
+        if all(boxes_are_almost_same(real_result[i], entered_model_result[i], eps) for i in range(len(real_result))):
+            count_of_accepted += 1
 
-for img_path in processed_images_folder.glob('*.jpg'):
-    count_of_all_images += 1
-    img_name = str(img_path.name)[:-4]
-    real_result = get_results(str(real_results_folder / Path(f"{img_name}.txt")))
-    entered_model_result = get_results(str(entered_model_results_folder / Path(f"{img_name}.txt")))
-    if len(real_result) != len(entered_model_result):
-        continue
-    if all(boxes_are_almost_same(real_result[i], entered_model_result[i], eps) for i in range(len(real_result))):
-        count_of_accepted += 1
-
-print(count_of_accepted / count_of_all_images)
+    print(count_of_accepted / count_of_all_images)

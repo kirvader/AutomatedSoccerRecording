@@ -21,6 +21,6 @@ def parse_model():
     return parser.parse_args()
 
 model = parse_model().model
-process_source_with_model(source='testing_samples/images/',
+process_source_with_model(source='dataset/images/test/',
                           project_path=get_custom_model_results_folder(model),
                           model=model)
