@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
 
     // Read ort model into a ByteArray, run in background
     private suspend fun readModel(): ByteArray = withContext(Dispatchers.IO) {
-        val modelID = R.raw.best2
+        val modelID = R.raw.yolov5s
         resources.openRawResource(modelID).readBytes()
     }
 

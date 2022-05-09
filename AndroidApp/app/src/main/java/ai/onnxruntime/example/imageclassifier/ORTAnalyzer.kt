@@ -74,7 +74,7 @@ internal class ORTAnalyzer(
             val maxScoreInd = getIndOfMaxValue(record.takeLast(80)) + 5
             if (record[maxScoreInd] < SCORE_THRESHOLD) continue
             val classId = maxScoreInd - 5
-            // if (classId != importantClassId) continue
+//            if (classId != importantClassId) continue
             result.add(ClassifiedBox(
                 record[0] / IMAGE_WIDTH,
                 record[1] / IMAGE_HEIGHT,
@@ -85,11 +85,17 @@ internal class ORTAnalyzer(
         return result
     }
 
+    // Rotate the image of the input bitmap
+    fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
+
     override fun analyze(image: ImageProxy) {
         // Convert the input image to bitmap and resize to 640x640 for model input
         val imgBitmap = image.toBitmap()
         val rawBitmap = imgBitmap?.let { Bitmap.createScaledBitmap(it, 640, 640, false) }
-        val bitmap = rawBitmap
+        val bitmap = rawBitmap?.rotate(image.imageInfo.rotationDegrees.toFloat())
 
         if (bitmap != null) {
             var result = Result()
@@ -112,6 +118,8 @@ internal class ORTAnalyzer(
 
                         val top3 = getTop3(balls)
                         for (ball in top3) {
+                            result.detectedScore.clear()
+                            result.detectedIndices.clear()
                             result.detectedScore.add(ball.confidence)
                             result.detectedIndices.add(ball.classId)
                         }
